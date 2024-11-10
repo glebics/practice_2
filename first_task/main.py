@@ -1,11 +1,19 @@
 from .database import create_all_tables, Session
 from .models import Book, Author, Genre
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session as SessionType
 
 
-def test_crud_operations():
+def test_crud_operations() -> None:
+    """
+    Тестовая функция для проверки базовых операций CRUD (создание, чтение, обновление, удаление)
+    с таблицами авторов, жанров и книг в базе данных.
+
+    Создает автора и жанр, добавляет книгу, обновляет данные о книге, читает данные из таблицы
+    книг и удаляет запись о книге. В случае ошибки выполняется откат транзакции.
+    """
     # Создаем сессию
-    session = Session()
+    session: SessionType = Session()
     try:
         # Добавление нового автора и жанра
         new_author = Author(name_author="Лев Толстой")
@@ -40,7 +48,9 @@ def test_crud_operations():
         print("Список книг:")
         for book in books:
             print(
-                f"Название: {book.title}, Автор ID: {book.author_id}, Жанр ID: {book.genre_id}, Цена: {book.price}, Количество: {book.amount}")
+                f"Название: {book.title}, Автор ID: {book.author_id}, Жанр ID: {book.genre_id}, "
+                f"Цена: {book.price}, Количество: {book.amount}"
+            )
 
         # Удаление записи о книге
         book_to_delete = session.query(Book).filter_by(
@@ -58,6 +68,10 @@ def test_crud_operations():
 
 
 if __name__ == "__main__":
+    """
+    Основная точка входа в программу. Создает таблицы в базе данных и выполняет тестовые
+    CRUD-операции для проверки работы с базой данных.
+    """
     # Создаем таблицы
     create_all_tables()
     print("Таблицы успешно созданы")

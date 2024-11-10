@@ -23,7 +23,13 @@ BASE_URL = "https://spimex.com/markets/oil_products/trades/results/"
 Base.metadata.create_all(bind=engine)
 
 
-def calculate_months_limit():
+def calculate_months_limit() -> int:
+    """
+    Вычисляет количество месяцев между начальной и текущей датами.
+
+    Returns:
+        int: Количество месяцев между начальной и текущей датами.
+    """
     start_date = datetime(2023, 1, 1)
     current_date = datetime.now()
     months_diff = (current_date.year - start_date.year) * \
@@ -31,7 +37,13 @@ def calculate_months_limit():
     return months_diff
 
 
-def fetch_report_links():
+def fetch_report_links() -> list[str]:
+    """
+    Получает ссылки на отчетные файлы с сайта SPIMEX.
+
+    Returns:
+        list[str]: Список ссылок на отчетные файлы.
+    """
     session = requests.Session()
     page_number = 1
     months_limit = calculate_months_limit()
@@ -64,7 +76,16 @@ def fetch_report_links():
     return collected_links[:10]
 
 
-def extract_trade_date(file_path):
+def extract_trade_date(file_path: str) -> datetime.date | None:
+    """
+    Извлекает дату торгов из указанного файла Excel.
+
+    Args:
+        file_path (str): Путь к файлу Excel.
+
+    Returns:
+        datetime.date | None: Дата торгов или None, если дата не найдена.
+    """
     try:
         df = pd.read_excel(file_path, header=None)
         for row in df.itertuples(index=False):
@@ -84,18 +105,47 @@ def extract_trade_date(file_path):
         return None
 
 
-def report_exists(date):
+def report_exists(date: datetime.date) -> bool:
+    """
+    Проверяет, существует ли отчет для указанной даты в локальной файловой системе.
+
+    Args:
+        date (datetime.date): Дата отчета.
+
+    Returns:
+        bool: True, если отчет существует, иначе False.
+    """
     file_path = os.path.join(REPORTS_DIR, f"{date}.xls")
     return os.path.exists(file_path)
 
 
-def is_report_in_db(report_date, db: Session):
+def is_report_in_db(report_date: datetime.date, db: Session) -> bool:
+    """
+    Проверяет, существует ли отчет для указанной даты в базе данных.
+
+    Args:
+        report_date (datetime.date): Дата отчета.
+        db (Session): Сессия базы данных.
+
+    Returns:
+        bool: True, если отчет существует в базе данных, иначе False.
+    """
     query = text("SELECT 1 FROM spimex_trading_results WHERE date = :date")
     result = db.execute(query, {"date": report_date}).fetchone()
     return result is not None
 
 
-def download_report(url, index):
+def download_report(url: str, index: int) -> str | None:
+    """
+    Скачивает отчет по указанной ссылке и сохраняет его в локальной системе.
+
+    Args:
+        url (str): Ссылка на отчет.
+        index (int): Индекс файла для временного сохранения.
+
+    Returns:
+        str | None: Путь к файлу отчета или None, если дата не была извлечена.
+    """
     response = requests.get(url)
     if response.status_code == 200:
         temp_file_path = os.path.join(REPORTS_DIR, f"temp_report_{index}.xls")
@@ -126,22 +176,22 @@ def download_report(url, index):
         return None
 
 
-def save_report_to_db(file_path, db: Session):
+def save_report_to_db(file_path: str, db: Session) -> None:
+    """
+    Сохраняет данные из отчета в базе данных.
+
+    Args:
+        file_path (str): Путь к файлу отчета.
+        db (Session): Сессия базы данных.
+    """
     try:
         logging.info(
             f"Начало обработки файла '{file_path}' для записи в базу данных.")
-
-        # Читаем данные, начиная с 7-й строки как заголовок
         df = pd.read_excel(file_path, skiprows=6)
-
-        # Обрабатываем объединенные названия и заменяем NaN на пустую строку
         df.columns = df.columns.to_series().ffill()
         df = df.fillna('')
 
-        logging.info(f"Столбцы после пропуска строк: {df.columns.tolist()}")
-        logging.info(f"Превью данных:\n{df.head()}")
-
-        # Маппинг для переименования
+        # Переименование столбцов для базы данных
         column_mapping = {
             'Код\nИнструмента': 'exchange_product_id',
             'Наименование\nИнструмента': 'exchange_product_name',
@@ -151,48 +201,35 @@ def save_report_to_db(file_path, db: Session):
             'Цена в Заявках (за единицу\nизмерения)': 'delivery_type_id',
             'Количество\nДоговоров,\nшт.': 'count',
         }
-
         df.rename(columns=column_mapping, inplace=True)
-        logging.info(f"Столбцы после переименования: {df.columns.tolist()}")
 
         required_columns = list(column_mapping.values())
         missing_columns = [
             col for col in required_columns if col not in df.columns]
-
         if missing_columns:
             logging.warning(
                 f"В файле '{file_path}' отсутствуют столбцы: {missing_columns}")
             return
 
-        # Оставляем нужные столбцы
         df = df[required_columns]
-
-        # Преобразование дефисов и пустых значений в None
         df.replace({'-': None, '': None}, inplace=True)
-
-        # Фильтрация строки "Итого" и пропуск строк с None в обязательных полях
         df = df[~df['exchange_product_id'].str.contains('Итого', na=False)]
         df.dropna(subset=['exchange_product_id',
                   'exchange_product_name', 'delivery_basis_id'], inplace=True)
 
-        # Обрабатываем и записываем данные в базу данных
         for _, row in df.iterrows():
-            if not row['exchange_product_id']:  # Пропуск пустых строк
-                continue
-
             report_data = {
                 "exchange_product_id": row['exchange_product_id'],
                 "exchange_product_name": row['exchange_product_name'],
                 "oil_id": row['exchange_product_id'][:4] if isinstance(row['exchange_product_id'], str) else None,
                 "delivery_basis_id": row['delivery_basis_id'],
-                "delivery_basis_name": "",  # Оставьте пустым при отсутствии данных
+                "delivery_basis_name": "",
                 "delivery_type_id": try_convert_to_float(row['delivery_type_id']),
                 "volume": try_convert_to_float(row['volume']),
                 "total": try_convert_to_float(row['total']),
                 "count": try_convert_to_int(row['count']),
                 "date": datetime.strptime(file_path.split("/")[-1].replace(".xls", ""), "%Y-%m-%d")
             }
-            logging.info(f"Запись в базу данных: {report_data}")
             db.execute(
                 text(
                     """
@@ -213,21 +250,42 @@ def save_report_to_db(file_path, db: Session):
         db.rollback()
 
 
-def try_convert_to_float(value):
+def try_convert_to_float(value: any) -> float | None:
+    """
+    Пытается преобразовать значение в float.
+
+    Args:
+        value (any): Значение для преобразования.
+
+    Returns:
+        float | None: Преобразованное значение или None, если преобразование невозможно.
+    """
     try:
         return float(value) if value is not None else None
     except ValueError:
         return None
 
 
-def try_convert_to_int(value):
+def try_convert_to_int(value: any) -> int | None:
+    """
+    Пытается преобразовать значение в int.
+
+    Args:
+        value (any): Значение для преобразования.
+
+    Returns:
+        int | None: Преобразованное значение или None, если преобразование невозможно.
+    """
     try:
         return int(value) if value is not None else None
     except ValueError:
         return None
 
 
-def main():
+def main() -> None:
+    """
+    Основная функция программы, которая загружает отчеты, обрабатывает их и сохраняет в базу данных.
+    """
     logging.info("Начало работы программы.")
     report_links = fetch_report_links()
 
