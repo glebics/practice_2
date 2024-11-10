@@ -1,10 +1,28 @@
-from dotenv import load_dotenv
-import os
+from pydantic import BaseSettings, PostgresDsn
 
-load_dotenv()
 
-DB_NAME = os.environ.get('DB_NAME')
-DB_HOST = os.environ.get('DB_HOST')
-DB_PORT = os.environ.get('DB_PORT')
-DB_USER = os.environ.get('DB_USER')
-DB_PASS = os.environ.get('DB_PASS')
+class Settings(BaseSettings):
+    DB_NAME: str
+    DB_HOST: str
+    DB_PORT: str
+    DB_USER: str
+    DB_PASS: str
+
+    class Config:
+        env_file = ".env"
+        env_prefix = "DB_"
+        case_sensitive = True
+
+    @property
+    def database_url(self) -> PostgresDsn:
+        return PostgresDsn.build(
+            scheme="postgresql",
+            user=self.db_user,
+            password=self.db_pass,
+            host=self.db_host,
+            port=str(self.db_port),
+            path=f"/{self.db_name}",
+        )
+
+
+settings = Settings()

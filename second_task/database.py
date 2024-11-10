@@ -2,26 +2,30 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
+from config import settings  # Импортируем объект settings
+
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 
-# Формирование URL базы данных
+
+# Получаем URL базы данных из settings
 try:
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    logging.info("URL базы данных успешно сформирован.")
+    DATABASE_URL = settings.database_url  # Используем database_url из settings
+    logging.info("URL базы данных успешно получен из настроек.")
 except Exception as e:
-    logging.error(f"Ошибка при формировании URL базы данных: {e}")
+    logging.error(f"Ошибка при получении URL базы данных: {e}")
     raise
 
-# Создание базы данных
+
+# Создание движка базы данных
 try:
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
     logging.info("Движок базы данных успешно создан.")
 except Exception as e:
     logging.error(f"Ошибка при создании движка базы данных: {e}")
     raise
+
 
 # Создание сессии
 try:
@@ -31,12 +35,12 @@ except Exception as e:
     logging.error(f"Ошибка при создании SessionLocal: {e}")
     raise
 
+
 # Создание базового класса для моделей
 Base = declarative_base()
 
+
 # Функция для получения сессии
-
-
 def get_db():
     logging.info("Создание сессии базы данных.")
     db = SessionLocal()

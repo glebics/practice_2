@@ -1,24 +1,18 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
+from config import settings
 
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+# Базовый класс для всех моделей
 BaseModel = declarative_base()
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+# Создание движка и сессии
+engine = create_engine(settings.database_url, pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
 
 
 # Функция для создания всех таблиц
-def create_all_tables():
+def create_all_tables() -> None:
     BaseModel.metadata.create_all(engine)
-
-
-""" для асинхронной работы
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from .config import DB_HOST, DB_NAME, DB_PASS, DB_PORT, DB_USER
-"""
