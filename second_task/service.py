@@ -24,7 +24,7 @@ class SpimexService:
     def fetch_report_links(self, months_limit: int) -> List[str]:
         session = requests.Session()
         page_number = 1
-        collected_links = []
+        collected_links: List[str] = []
 
         while len(collected_links) < months_limit:
             url = f"{self.BASE_URL}?page={page_number}"
