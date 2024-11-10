@@ -9,31 +9,10 @@ from config import settings  # Импортируем объект settings
 logging.basicConfig(level=logging.INFO)
 
 
-# Получаем URL базы данных из settings
-try:
-    DATABASE_URL = settings.database_url  # Используем database_url из settings
-    logging.info("URL базы данных успешно получен из настроек.")
-except Exception as e:
-    logging.error(f"Ошибка при получении URL базы данных: {e}")
-    raise
-
-
-# Создание движка базы данных
-try:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-    logging.info("Движок базы данных успешно создан.")
-except Exception as e:
-    logging.error(f"Ошибка при создании движка базы данных: {e}")
-    raise
-
-
-# Создание сессии
-try:
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    logging.info("SessionLocal успешно создан.")
-except Exception as e:
-    logging.error(f"Ошибка при создании SessionLocal: {e}")
-    raise
+# Создание движка базы данных с использованием URL из settings
+DATABASE_URL = settings.database_url  # Используем database_url напрямую
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+logging.info("Движок базы данных успешно создан.")
 
 
 # Соглашение по именованию индексов, ограничений и других элементов БД
@@ -45,13 +24,17 @@ naming_convention = {
     "pk": "pk_%(table_name)s",
 }
 
-
 # Метаданные с настройками именования и схемой
 metadata = MetaData(naming_convention=naming_convention, schema="your_schema")
 
 
 # Базовый класс для всех моделей с метаданными
 Base = declarative_base(metadata=metadata)
+
+
+# Создание сессии
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+logging.info("SessionLocal успешно создан.")
 
 
 # Функция для получения сессии
