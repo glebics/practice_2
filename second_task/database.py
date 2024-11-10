@@ -25,7 +25,8 @@ naming_convention = {
 }
 
 # Метаданные с настройками именования и схемой
-metadata = MetaData(naming_convention=naming_convention, schema="your_schema")
+metadata = MetaData(naming_convention=naming_convention)
+# , schema="your_schema" - для упрощения не буду использовать другую схему
 
 
 # Базовый класс для всех моделей с метаданными

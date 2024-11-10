@@ -1,11 +1,12 @@
 from models import SpimexTradingResult
+from typing import Optional, Any
 from database import Base, engine
 import re
 import os
 import requests
 import logging
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, date
 from database import get_db, SessionLocal
 from sqlalchemy.orm import Session
 import pandas as pd
@@ -47,7 +48,7 @@ def fetch_report_links() -> list[str]:
     session = requests.Session()
     page_number = 1
     months_limit = calculate_months_limit()
-    collected_links = []
+    collected_links: list[str] = []
 
     while len(collected_links) < months_limit:
         url = f"{BASE_URL}?page={page_number}"
@@ -76,7 +77,7 @@ def fetch_report_links() -> list[str]:
     return collected_links[:10]
 
 
-def extract_trade_date(file_path: str) -> datetime.date | None:
+def extract_trade_date(file_path: str) -> Optional[date]:
     """
     Извлекает дату торгов из указанного файла Excel.
 
@@ -105,7 +106,7 @@ def extract_trade_date(file_path: str) -> datetime.date | None:
         return None
 
 
-def report_exists(date: datetime.date) -> bool:
+def report_exists(date: date) -> bool:
     """
     Проверяет, существует ли отчет для указанной даты в локальной файловой системе.
 
@@ -119,12 +120,12 @@ def report_exists(date: datetime.date) -> bool:
     return os.path.exists(file_path)
 
 
-def is_report_in_db(report_date: datetime.date, db: Session) -> bool:
+def is_report_in_db(report_date: date, db: Session) -> bool:
     """
     Проверяет, существует ли отчет для указанной даты в базе данных.
 
     Args:
-        report_date (datetime.date): Дата отчета.
+        report_date (date): Дата отчета.
         db (Session): Сессия базы данных.
 
     Returns:
@@ -135,7 +136,7 @@ def is_report_in_db(report_date: datetime.date, db: Session) -> bool:
     return result is not None
 
 
-def download_report(url: str, index: int) -> str | None:
+def download_report(url: str, index: int) -> Optional[str]:
     """
     Скачивает отчет по указанной ссылке и сохраняет его в локальной системе.
 
@@ -250,7 +251,7 @@ def save_report_to_db(file_path: str, db: Session) -> None:
         db.rollback()
 
 
-def try_convert_to_float(value: any) -> float | None:
+def try_convert_to_float(value: Any) -> Optional[float]:
     """
     Пытается преобразовать значение в float.
 
@@ -266,7 +267,7 @@ def try_convert_to_float(value: any) -> float | None:
         return None
 
 
-def try_convert_to_int(value: any) -> int | None:
+def try_convert_to_int(value: Any) -> Optional[int]:
     """
     Пытается преобразовать значение в int.
 
