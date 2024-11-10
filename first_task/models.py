@@ -60,7 +60,7 @@ class Client(BaseModel):
 
     # Связи с другими таблицами
     city = relationship("City", back_populates="clients")
-    buys = relationship("Buy", back_populates="client")
+    purchases = relationship("Purchase", back_populates="client")
 
 
 # Таблица книг
@@ -82,12 +82,12 @@ class Book(BaseModel):
     # Связи с другими таблицами
     author = relationship("Author", back_populates="books")
     genre = relationship("Genre", back_populates="books")
-    buy_books = relationship("BuyBook", back_populates="book")
+    buy_books = relationship("PurchaseBook", back_populates="book")
 
 
 # Таблица покупок
-class Buy(BaseModel):
-    __tablename__ = 'buy'
+class Purchase(BaseModel):
+    __tablename__ = 'purchase'
     __table_args__ = {
         "comment": "Таблица, содержащая информацию о покупках клиентов"}
 
@@ -98,9 +98,9 @@ class Buy(BaseModel):
                        comment="Идентификатор клиента, совершившего покупку")
 
     # Связи с другими таблицами
-    client = relationship("Client", back_populates="buys")
-    buy_books = relationship("BuyBook", back_populates="buy")
-    buy_steps = relationship("BuyStep", back_populates="buy")
+    client = relationship("Client", back_populates="purchases")
+    buy_books = relationship("PurchaseBook", back_populates="purchase")
+    buy_steps = relationship("PurchaseStep", back_populates="purchase")
 
 
 # Таблица этапов покупки
@@ -114,18 +114,18 @@ class Step(BaseModel):
     name_step = Column(String, nullable=False, comment="Название этапа")
 
     # Связь с таблицей buy_step
-    buy_steps = relationship("BuyStep", back_populates="step")
+    buy_steps = relationship("PurchaseStep", back_populates="step")
 
 
 # Таблица покупаемых книг
-class BuyBook(BaseModel):
+class PurchaseBook(BaseModel):
     __tablename__ = 'buy_book'
     __table_args__ = {
         "comment": "Таблица, содержащая информацию о книгах, приобретенных в рамках покупок"}
 
     pk_buy_book_id = Column(Integer, primary_key=True,
                             comment="Уникальный идентификатор записи о приобретенной книге")
-    buy_id = Column(Integer, ForeignKey('buy.pk_buy_id'),
+    buy_id = Column(Integer, ForeignKey('purchase.pk_buy_id'),
                     comment="Идентификатор покупки")
     book_id = Column(Integer, ForeignKey('book.pk_book_id'),
                      comment="Идентификатор книги")
@@ -133,19 +133,19 @@ class BuyBook(BaseModel):
                     comment="Количество экземпляров книги, приобретенных в рамках покупки")
 
     # Связи с другими таблицами
-    buy = relationship("Buy", back_populates="buy_books")
+    purchase = relationship("Purchase", back_populates="buy_books")
     book = relationship("Book", back_populates="buy_books")
 
 
 # Таблица шагов покупки
-class BuyStep(BaseModel):
+class PurchaseStep(BaseModel):
     __tablename__ = 'buy_step'
     __table_args__ = {
         "comment": "Таблица, связывающая этапы покупки с конкретными покупками"}
 
     pk_buy_step_id = Column(Integer, primary_key=True,
                             comment="Уникальный идентификатор шага в процессе покупки")
-    buy_id = Column(Integer, ForeignKey('buy.pk_buy_id'),
+    buy_id = Column(Integer, ForeignKey('purchase.pk_buy_id'),
                     comment="Идентификатор покупки")
     step_id = Column(Integer, ForeignKey('step.pk_step_id'),
                      comment="Идентификатор этапа покупки")
@@ -154,5 +154,5 @@ class BuyStep(BaseModel):
     date_step_end = Column(DateTime, comment="Дата окончания этапа покупки")
 
     # Связи с другими таблицами
-    buy = relationship("Buy", back_populates="buy_steps")
+    purchase = relationship("Purchase", back_populates="buy_steps")
     step = relationship("Step", back_populates="buy_steps")
