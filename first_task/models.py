@@ -7,7 +7,7 @@ from .database import BaseModel
 class Genre(BaseModel):
     __tablename__ = 'genre'
 
-    genre_id = Column(Integer, primary_key=True)
+    pk_genre_id = Column(Integer, primary_key=True)
     name_genre = Column(String, nullable=False)
 
     # Связь с книгами
@@ -18,7 +18,7 @@ class Genre(BaseModel):
 class Author(BaseModel):
     __tablename__ = 'author'
 
-    author_id = Column(Integer, primary_key=True)
+    pk_author_id = Column(Integer, primary_key=True)
     name_author = Column(String, nullable=False)
 
     # Связь с книгами
@@ -29,7 +29,7 @@ class Author(BaseModel):
 class City(BaseModel):
     __tablename__ = 'city'
 
-    city_id = Column(Integer, primary_key=True)
+    pk_city_id = Column(Integer, primary_key=True)
     name_city = Column(String, nullable=False)
     days_delivery = Column(Integer, nullable=False)
 
@@ -41,7 +41,7 @@ class City(BaseModel):
 class Client(BaseModel):
     __tablename__ = 'client'
 
-    client_id = Column(Integer, primary_key=True)
+    pk_client_id = Column(Integer, primary_key=True)
     name_client = Column(String, nullable=False)
     city_id = Column(Integer, ForeignKey('city.city_id'))
     email = Column(String, nullable=False)
@@ -55,7 +55,7 @@ class Client(BaseModel):
 class Book(BaseModel):
     __tablename__ = 'book'
 
-    book_id = Column(Integer, primary_key=True)
+    pk_book_id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     author_id = Column(Integer, ForeignKey('author.author_id'))
     genre_id = Column(Integer, ForeignKey('genre.genre_id'))
@@ -72,7 +72,7 @@ class Book(BaseModel):
 class Buy(BaseModel):
     __tablename__ = 'buy'
 
-    buy_id = Column(Integer, primary_key=True)
+    pk_buy_id = Column(Integer, primary_key=True)
     buy_description = Column(String)
     client_id = Column(Integer, ForeignKey('client.client_id'))
 
@@ -86,7 +86,7 @@ class Buy(BaseModel):
 class Step(BaseModel):
     __tablename__ = 'step'
 
-    step_id = Column(Integer, primary_key=True)
+    pk_step_id = Column(Integer, primary_key=True)
     name_step = Column(String, nullable=False)
 
     # Связь с таблицей buy_step
@@ -97,7 +97,7 @@ class Step(BaseModel):
 class BuyBook(BaseModel):
     __tablename__ = 'buy_book'
 
-    buy_book_id = Column(Integer, primary_key=True)
+    pk_buy_book_id = Column(Integer, primary_key=True)
     buy_id = Column(Integer, ForeignKey('buy.buy_id'))
     book_id = Column(Integer, ForeignKey('book.book_id'))
     amount = Column(Integer, nullable=False)
@@ -111,7 +111,7 @@ class BuyBook(BaseModel):
 class BuyStep(BaseModel):
     __tablename__ = 'buy_step'
 
-    buy_step_id = Column(Integer, primary_key=True)
+    pk_buy_step_id = Column(Integer, primary_key=True)
     buy_id = Column(Integer, ForeignKey('buy.buy_id'))
     step_id = Column(Integer, ForeignKey('step.step_id'))
     date_step_beg = Column(DateTime, nullable=False)
